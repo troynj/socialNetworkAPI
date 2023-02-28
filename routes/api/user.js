@@ -4,7 +4,15 @@ const { User } = require('../../models');
 // GET all users
 router.get('/', async (req, res) => {
   try {
-    const users = await User.find();
+    const users = await User.find()
+    .populate({
+      path: 'thoughts',
+      select: '-__v'
+    })
+    .populate({
+      path: 'friends',
+      select: '-__v'
+    });
     res.json(users);
   } catch (err) {
     console.error(err);
@@ -13,9 +21,9 @@ router.get('/', async (req, res) => {
 });
 
 // GET a single user by its _id and populated thought and friend data
-router.get('/:_id', async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
-    const user = await User.findOne({ _id: req.params._id })
+    const user = await User.findOne({ _id: req.params.id })
       .populate({
         path: 'thoughts',
         select: '-__v'
@@ -81,7 +89,7 @@ router.post('/:id/friends', async (req, res) => {
   try {
     const user = await User.findOneAndUpdate(
       { _id: req.params.id },
-      { $push: { friends: req.body } },
+      { $addToSet: { friends: req.body } },
       { new: true, runValidators: true }
     );
     if (!user) {

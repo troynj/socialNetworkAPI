@@ -1,5 +1,5 @@
 const router = require('express').Router();
-const { Thought } = require('../../models');
+const { User, Thought } = require('../../models');
 
 // GET all thoughts
 router.get('/', async (req, res) => {
@@ -13,9 +13,9 @@ router.get('/', async (req, res) => {
 });
 
 // GET to get a single thought by its _id
-router.get('/:id', async (req, res) => {
+router.get('/:_id', async (req, res) => {
   try {
-    const thought = await Thought.findOne({ _id: req.params.id });
+    const thought = await Thought.findOne({ _id: req.params._id });
     if (!thought) {
       res.status(404).json({ message: 'No thought found with this id!' });
       return;
@@ -33,7 +33,7 @@ router.post('/', async (req, res) => {
     const thought = await Thought.create(req.body);
     await User.findOneAndUpdate(
       { _id: req.body.userId },
-      { $push: { thoughts: thought._id } },
+      { $addToSet: { thoughts: thought._id } },
       { new: true }
     );
     res.json(thought);
@@ -86,7 +86,7 @@ router.post('/:id/reactions', async (req, res) => {
   try {
     const thought = await Thought.findOneAndUpdate(
       { _id: req.params.id },
-      { $push: { reactions: req.body } },
+      { $addToSet: { reactions: req.body } },
       { new: true }
     );
     if (!thought) {
@@ -100,24 +100,25 @@ router.post('/:id/reactions', async (req, res) => {
   }
 });
 
+
 // DELETE to pull and remove a reaction by the reaction's reactionId value
-router.delete('/:thoughtId/reactions/', async (req, res) => {
+router.delete('/:thoughtId/reactions/:reactionId', async (req, res) => {
   try {
-    const updatedThought = await Thought.findOneAndUpdate(
+    const thought = await Thought.findOneAndUpdate(
       { _id: req.params.thoughtId },
-      { $pull: { reactions: { reactionId: req.params.reactionId } } },
-      { new: true, runValidators: true }
+      { $addToSet: { reactions: { reactionId: req.params.reactionId } } },
+      { new: true }
     );
-
-    if (!updatedThought) {
-      return res.status(404).json({ message: 'No thought found with this id!' });
+    if (!thought) {
+      res.status(404).json({ message: 'No thought found with this id!' });
+      return;
     }
-
-    res.json(updatedThought);
+    res.json(thought);
   } catch (err) {
     console.error(err);
     res.status(500).json(err);
   }
 });
+
 
 module.exports = router

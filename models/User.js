@@ -30,6 +30,11 @@ const UserSchema = new mongoose.Schema({
 }, { toJSON: { virtuals: true } });
 
 // Define a virtual that retrieves the length of the user's friends array field on query
+UserSchema.virtual('thoughtCount').get(function() {
+  return this.thoughts.length;
+});
+
+// Define a virtual that retrieves the length of the user's friends array field on query
 UserSchema.virtual('friendCount').get(function() {
   return this.friends.length;
 });
